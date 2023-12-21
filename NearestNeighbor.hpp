@@ -20,6 +20,7 @@ public:
     double getX() const { return x_; }
     double getY() const { return y_; }
 
+    // Static method to calculate Euclidean distance between two nodes
     static double distance(const NODE& a, const NODE& b) {
         return std::hypot(a.x_ - b.x_, a.y_ - b.y_);
     }
@@ -30,6 +31,7 @@ private:
     double y_;
 };
 
+// Function to read nodes from a file and return a vector of NODEs
 std::vector<NODE> read(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -52,6 +54,7 @@ std::vector<NODE> read(const std::string& filename) {
     return nodes;
 }
 
+// Function to perform the nearest neighbor algorithm on a set of nodes
 void nearestNeighbor(const std::string& filename) {
     auto nodes = read(filename);
     if (nodes.empty()) {
@@ -62,9 +65,9 @@ void nearestNeighbor(const std::string& filename) {
     std::vector<int> path;
     double tot = 0.0;
 
-    auto curr = nodes.begin();
-    path.push_back(curr->getId());
-    seen[curr - nodes.begin()] = true;
+    auto current = nodes.begin();
+    path.push_back(current->getId());
+    seen[current - nodes.begin()] = true;
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -72,9 +75,10 @@ void nearestNeighbor(const std::string& filename) {
         auto nearest = nodes.end();
         double minDistance = std::numeric_limits<double>::max();
 
+        // Find the nearest unvisited node
         for (auto it = nodes.begin(); it != nodes.end(); ++it) {
             if (!seen[it - nodes.begin()]) {
-                double distance = NODE::distance(*curr, *it);
+                double distance = NODE::distance(*current, *it);
                 if (distance < minDistance) {
                     nearest = it;
                     minDistance = distance;
@@ -82,23 +86,27 @@ void nearestNeighbor(const std::string& filename) {
             }
         }
 
+        // Mark the nearest node as visited and update the total distance
         seen[nearest - nodes.begin()] = true;
         tot += minDistance;
         path.push_back(nearest->getId());
-        curr = nearest;
+        current = nearest;
     }
 
-    tot += NODE::distance(*curr, nodes.front());
+    // Complete the path by adding the distance to the starting node
+    tot += NODE::distance(*current, nodes.front());
     path.push_back(nodes.front().getId());
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
+    // Output the path, total distance, and execution time
     for (int id : path) {
         std::cout << id << " ";
     }
     std::cout << "\nTotal Distance: " << tot << "\nTime in ms: " << duration.count() << std::endl;
 }
+
 
 //Total Distance: 1.03496e+06
 //Time in ms: 5912
