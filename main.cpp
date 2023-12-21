@@ -1,6 +1,7 @@
 #include "NearestNeighbor.hpp"
 
 int main() {
-    NearestNeighbor::nearestNeighbor("test.tsp");
+    std::string filename = "test.tsp";
+    nearestNeighbor(filename);
     return 0;
 }

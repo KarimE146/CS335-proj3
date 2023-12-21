@@ -7,88 +7,107 @@
 #include <vector>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <algorithm>
+#include <sstream>
+
 
 class NODE {
 public:
-    int id;
-    double x, y;
+    NODE(int id, double x, double y) : id_(id), x_(x), y_(y) {}
 
-    NODE(int id, double x, double y) : id(id), x(x), y(y) {}
-
-    double distance(const NODE& other) const {
-        double dx = x - other.x;
-        double dy = y - other.y;
-        return std::sqrt(dx * dx + dy * dy);
-    }
-};
-
-class NearestNeighbor {
-public:
-    static void nearestNeighbor(std::string filename) {
-        std::vector<NODE> nodes = readTSPFile(filename);
-
-        std::vector<int> tour;
-        tour.push_back(1); // Start with node 1
-        double totalDistance = 0.0;
-
-        auto startTime = std::chrono::high_resolution_clock::now();
-
-        while (tour.size() < nodes.size()) {
-            int currentCity = tour.back();
-            int nearestNeighbor = findNearestNeighbor(currentCity, nodes, tour);
-            tour.push_back(nearestNeighbor);
-            totalDistance += nodes[currentCity - 1].distance(nodes[nearestNeighbor - 1]);
+    int getId(){ 
+            return id_; 
+        }
+    double getX(){ 
+            return x_; 
+        }
+    double getY(){ 
+            return y_; 
         }
 
-        // Add distance from last node back to node 1
-        totalDistance += nodes[tour.back() - 1].distance(nodes[0]);
-
-        auto endTime = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-
-        // Print the tour
-        for (int city : tour) {
-            std::cout << city << " ";
-        }
-        std::cout << std::endl;
-
-        // Print total distance and time
-        std::cout << "Total Distance: " << totalDistance << std::endl;
-        std::cout << "Time in ms: " << duration.count() << std::endl;
+    static double distance(const NODE& a, const NODE& b) {
+        return sqrt((a.x_ - b.x_) * (a.x_ - b.x_) + (a.y_ - b.y_)  * (a.y_ - b.y_));
     }
 
 private:
-    static std::vector<NODE> readTSPFile(const std::string& filename) {
-        std::ifstream file(filename);
-        int id;
-        double x, y;
-        std::vector<NODE> nodes;
+    int id_;
+    double x_;
+    double y_;
+};
 
-        while (file >> id >> x >> y) {
-            nodes.emplace_back(id, x, y);
-        }
 
-        return nodes;
+std::vector<NODE> read(const std::string &filename){
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << std::endl;
+        return {};
     }
 
-    static int findNearestNeighbor(int currentCity, const std::vector<NODE>& nodes, const std::vector<int>& tour) {
-        int nearestNeighbor = -1;
-        double minDistance = std::numeric_limits<double>::infinity();
+    std::vector<NODE> nodes;
+    std::string line;
+    int id;
+    double x, y;
 
-        for (const NODE& node : nodes) {
-            if (std::find(tour.begin(), tour.end(), node.id) == tour.end()) {
-                double dist = nodes[currentCity - 1].distance(node);
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    nearestNeighbor = node.id;
+    while (std::getline(file, line)) {
+        std::istringstream iss(line);
+        if (!(iss >> id >> x >> y)) {
+            continue; 
+        }
+        nodes.emplace_back(id, x, y);
+    }
+
+    return nodes;
+}
+
+void nearestNeighbor(const std::string &filename) {
+    auto nodes = read(filename);
+    std::vector<bool> seen(nodes.size(), false);
+    std::vector<int> path;
+    double tot = 0.0;
+    auto current = nodes.begin();
+    path.push_back(current->getId());
+    seen[current - nodes.begin()] = true;
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    for (size_t i = 1; i < nodes.size(); ++i) {
+        auto nearest = nodes.end();
+        double minDist = std::numeric_limits<double>::max();
+
+        for (auto it = nodes.begin(); it != nodes.end(); ++it) {
+            if (!seen[it - nodes.begin()]) {
+                double dist = NODE::distance(*current, *it);
+                if (dist < minDist) {
+                    nearest = it;
+                    minDist = dist;
                 }
             }
         }
 
-        return nearestNeighbor;
+        seen[nearest - nodes.begin()] = true;
+        tot += minDist;
+        path.push_back(nearest->getId());
+        current = nearest;
     }
-};
+
+    tot += NODE::distance(*current, nodes.front()); // Distance back to the starting node
+    path.push_back(nodes.front().getId());
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    // Output the path, total distance, and time taken
+    for (int id : path) {
+        std::cout << id << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "Total Distance: " << tot << std::endl;
+    std::cout << "Time in ms: " << duration.count() << std::endl;
+}
+
+//Total Distance: 1.03496e+06
+//Time in ms: 5912
+
 
 #endif // NEAREST_NEIGHBOR_HPP
-

@@ -1,15 +1,26 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -Wall
 
-all: main
+HDRS = NearestNeighbor.hpp
 
-main: main.cpp NearestNeighbor.o
-	$(CXX) $(CXXFLAGS) $^ -o $@
+SRCS = $(wildcard *.cpp)
 
-NearestNeighbor.o: NearestNeighbor.cpp NearestNeighbor.hpp
+OBJS = $(SRCS:.cpp=.o)
+
+EXEC = main
+
+.PHONY: all clean rebuild
+
+all: $(EXEC)
+
+$(EXEC): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(OBJS) -o $(EXEC)
+
+# Rule to build object files
+%.o: %.cpp $(HDRS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f main *.o
+	rm -f $(OBJS) $(EXEC)
 
 rebuild: clean all
