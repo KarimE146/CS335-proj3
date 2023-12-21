@@ -73,31 +73,30 @@ void nearestNeighbor(const std::string &filename) {
 
     for (size_t i = 1; i < nodes.size(); ++i) {
         auto nearest = nodes.end();
-        double minDist = std::numeric_limits<double>::max();
+        double min = std::numeric_limits<double>::max();
 
         for (auto it = nodes.begin(); it != nodes.end(); ++it) {
             if (!seen[it - nodes.begin()]) {
-                double dist = NODE::distance(*current, *it);
-                if (dist < minDist) {
+                double distance = NODE::distance(*current, *it);
+                if (distance < min) {
                     nearest = it;
-                    minDist = dist;
+                    min = distance;
                 }
             }
         }
 
         seen[nearest - nodes.begin()] = true;
-        tot += minDist;
+        tot += min;
         path.push_back(nearest->getId());
         current = nearest;
     }
 
-    tot += NODE::distance(*current, nodes.front()); // Distance back to the starting node
+    tot += NODE::distance(*current, nodes.front()); 
     path.push_back(nodes.front().getId());
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-    // Output the path, total distance, and time taken
     for (int id : path) {
         std::cout << id << " ";
     }
